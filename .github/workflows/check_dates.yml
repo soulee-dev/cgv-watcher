@@ -1,0 +1,42 @@
+name: Check Movie Dates
+
+on:
+  schedule:
+    - cron: "*/5 * * * *"
+  workflow_dispatch:
+
+jobs:
+  run-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Download previous seen_dates.json
+        uses: actions/download-artifact@v5
+        with:
+          name: seen-dates
+          path: .
+        continue-on-error: true
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run script
+        env:
+          API_URL: ${{ secrets.API_URL }}
+          WEBHOOK_URL: ${{ secrets.WEBHOOK_URL }}
+          CGV_SECRET_KEY: ${{ secrets.CGV_SECRET_KEY }}
+        run: python main.py
+
+      - name: Upload seen_dates.json
+        uses: actions/upload-artifact@v4
+        with:
+          name: seen-dates
+          path: seen_dates.json
+          retention-days: 90
