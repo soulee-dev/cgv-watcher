@@ -29,9 +29,9 @@ jobs:
 
       - name: Run script
         env:
-          API_URL: ${{ secrets.API_URL }}
+          API_URL: ${{ vars.API_URL }}
           WEBHOOK_URL: ${{ secrets.WEBHOOK_URL }}
-          CGV_SECRET_KEY: ${{ secrets.CGV_SECRET_KEY }}
+          CGV_SECRET_KEY: ${{ vars.CGV_SECRET_KEY }}
         run: python main.py
 
       - name: Upload seen_dates.json
