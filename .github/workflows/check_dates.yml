@@ -9,15 +9,10 @@ jobs:
   run-check:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repo
+      - name: Checkout main repo
         uses: actions/checkout@v4
-
-      - name: Download previous seen_dates.json
-        uses: actions/download-artifact@v5
         with:
-          name: seen-dates
-          path: .
-        continue-on-error: true
+          fetch-depth: 0
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -34,9 +29,23 @@ jobs:
           CGV_SECRET_KEY: ${{ vars.CGV_SECRET_KEY }}
         run: python main.py
 
-      - name: Upload seen_dates.json
-        uses: actions/upload-artifact@v4
-        with:
-          name: seen-dates
-          path: seen_dates.json
-          retention-days: 90
+      - name: Commit seen_dates.json to `seen-dates` branch with timestamp
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          TIMESTAMP=$(TZ=Asia/Seoul date "+%Y-%m-%d %H:%M:%S %Z")
+          TEMP_BRANCH=gh-actions-temp
+
+          git fetch origin seen-dates:seen-dates || git switch -c seen-dates
+          git checkout -b $TEMP_BRANCH origin/seen-dates || git checkout -b $TEMP_BRANCH
+
+          cp seen_dates.json .
+
+          if [[ `git status --porcelain seen_dates.json` ]]; then
+            git add seen_dates.json
+            git commit -m "chore(seen-dates): update seen_dates.json [auto] - $TIMESTAMP"
+            git push origin $TEMP_BRANCH:seen-dates
+          else
+            echo "No changes to seen_dates.json"
+          fi
